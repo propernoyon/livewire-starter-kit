@@ -20,8 +20,8 @@
 
                 <div class="relative z-20 mt-auto">
                     <blockquote class="space-y-2">
-                        <p class="text-lg">&ldquo;{{ trim($message) }}&rdquo;</p>
-                        <footer class="text-sm">{{ trim($author) }}</footer>
+                        <flux:heading size="lg">&ldquo;{{ trim($message) }}&rdquo;</flux:heading>
+                        <footer><flux:heading>{{ trim($author) }}</flux:heading></footer>
                     </blockquote>
                 </div>
             </div>

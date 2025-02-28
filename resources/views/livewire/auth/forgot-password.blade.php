@@ -32,7 +32,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
         <!-- Email Address -->
         <flux:input
             wire:model="email"
-            label="{{ __('Email Address') }}"
+            :label="__('Email Address')"
             type="email"
             name="email"
             required
@@ -45,6 +45,6 @@ new #[Layout('components.layouts.auth')] class extends Component {
 
     <div class="space-x-1 text-center text-sm text-zinc-400">
         Or, return to
-        <flux:link href="{{ route('login') }}" wire:navigate>log in</flux:link>
+        <flux:link :href="route('login')" wire:navigate>log in</flux:link>
     </div>
 </div>
