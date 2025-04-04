@@ -40,6 +40,10 @@ new #[Layout('components.layouts.auth')] class extends Component {
         RateLimiter::clear($this->throttleKey());
         Session::regenerate();
 
+        session()->put([
+            'login.id' => App\Models\User::where('email', $this->email)->first()->getKey()
+        ]);
+
         $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
     }
 
