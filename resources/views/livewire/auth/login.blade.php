@@ -10,6 +10,8 @@ use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
 use Livewire\Volt\Component;
+use Illuminate\Http\RedirectResponse;
+use App\Models\User;
 
 new #[Layout('components.layouts.auth')] class extends Component {
     #[Validate('required|string|email')]
@@ -20,6 +22,10 @@ new #[Layout('components.layouts.auth')] class extends Component {
 
     public bool $remember = false;
 
+    public function mount(){
+     //   dd(session()->get('login.id'));
+    }
+
     /**
      * Handle an incoming authentication request.
      */
@@ -27,24 +33,44 @@ new #[Layout('components.layouts.auth')] class extends Component {
     {
         $this->validate();
 
-        $this->ensureIsNotRateLimited();
-
-        if (! Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
-            RateLimiter::hit($this->throttleKey());
-
-            throw ValidationException::withMessages([
-                'email' => __('auth.failed'),
+        $userAttemptingLogin = User::where('email', $this->email)->first();
+        if($this->userHasTwoFactorEnabled($userAttemptingLogin)){
+            session()->put([
+                'login.id' => $userAttemptingLogin->getKey()
             ]);
+            $this->redirectTwoFactor($userAttemptingLogin);
+        } else {
+
+            $this->ensureIsNotRateLimited();
+
+            if (! Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
+                RateLimiter::hit($this->throttleKey());
+
+                throw ValidationException::withMessages([
+                    'email' => __('auth.failed'),
+                ]);
+            }
+
+            RateLimiter::clear($this->throttleKey());
+            Session::regenerate();
+
+            $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
         }
+    }
 
-        RateLimiter::clear($this->throttleKey());
-        Session::regenerate();
+    protected function userHasTwoFactorEnabled(User $userAttemptingLogin): bool
+    {
+        return $userAttemptingLogin->two_factor_confirmed_at !== null;
+    }
 
+    protected function redirectTwoFactor(User $userAttemptingLogin): Livewire\Features\SupportRedirects\Redirector
+    {
+        // We want this user to login via 2fa
         session()->put([
-            'login.id' => App\Models\User::where('email', $this->email)->first()->getKey()
+            'login.id' => $userAttemptingLogin->getKey()
         ]);
 
-        $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
+        return redirect()->route('two-factor-challenge');
     }
 
     /**

@@ -15,6 +15,7 @@ class TwoFactorChallenged
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // dd(session()->has('login.id'));
         if ( !session()->has('login.id')) {
             return redirect()->route('login');
         }

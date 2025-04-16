@@ -1,26 +1,18 @@
 <?php
 
 use App\Models\User;
-use function Laravel\Folio\{middleware, name};
 use Illuminate\Support\Facades\Route;
 use Illuminate\Auth\Events\Login;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Validate;
+use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 use PragmaRX\Google2FA\Google2FA;
-use Devdojo\Auth\Traits\HasConfigs;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Auth;
 
-if(!isset($_GET['preview']) || (isset($_GET['preview']) && $_GET['preview'] != true) || !app()->isLocal()){
-    middleware(['two-factor-challenged', 'throttle:5,1']);
-}
-
-name('auth.two-factor-challenge');
-
 new #[Layout('components.layouts.auth')] class extends Component
 {
-    use HasConfigs;
     
     public $recovery = false;
     public $google2fa;
@@ -31,7 +23,7 @@ new #[Layout('components.layouts.auth')] class extends Component
 
     public function mount()
     {
-        $this->loadConfigs();
+        // dd(session()->get('login.id'));
         $this->recovery = false;
     }
 
@@ -53,6 +45,7 @@ new #[Layout('components.layouts.auth')] class extends Component
         $this->validate();
 
         $user = User::find(session()->get('login.id'));
+        // dd(session()->get('login.id'));
         $secret = decrypt($user->two_factor_secret);
         $google2fa = new Google2FA();
         $valid = $google2fa->verifyKey($secret, $code);
@@ -84,11 +77,7 @@ new #[Layout('components.layouts.auth')] class extends Component
 
         event(new Login(auth()->guard('web'), $user, true));
         
-        if(session()->get('url.intended') != route('logout.get')){
-            return redirect()->intended(config('devdojo.auth.settings.redirect_after_auth'));
-        } else {
-            return redirect(config('devdojo.auth.settings.redirect_after_auth'));
-        }
+        $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
     }
 }
 
@@ -102,19 +91,12 @@ new #[Layout('components.layouts.auth')] class extends Component
             <x-auth-header :title="__('Recovery Code')" :description="__('Please confirm access to your account by entering one of your emergency recovery codes.')" />
         @endif
 
-        <div class="space-y-5">
+        <div class="space-y-5 text-center">
 
             @if(!$recovery)
-                <div class="relative">
+                <div class="relative mt-5">
                     <!-- Authentication Code -->
-                    <flux:input
-                        wire:model="auth_code"
-                        :label="__('Authentication Code')"
-                        type="text"
-                        required
-                        autofocus
-                        autocomplete="one-time-code"
-                    />
+                    <x-input-otp wire:model="auth_code" id="auth-input-code" digits="6" eventCallback="code-input-complete" type="text" label="Code" />
                 </div>
                 @error('auth_code')
                     <p class="my-2 text-sm text-red-600">{{ $message }}</p>
@@ -137,7 +119,7 @@ new #[Layout('components.layouts.auth')] class extends Component
             @endif
         </div>
 
-        <div class="mt-5 space-x-0.5 text-sm leading-5 text-left text-black dark:text-white">
+        <div class="mt-5 space-x-0.5 text-sm leading-5 text-center text-black dark:text-white">
             <span class="opacity-[47%]">or you can </span>
             <span class="font-medium underline opacity-60 cursor-pointer" wire:click="switchToRecovery" href="#_">
                 @if(!$recovery)
