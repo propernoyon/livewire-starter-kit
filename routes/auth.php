@@ -32,7 +32,7 @@ Route::middleware('auth')->group(function () {
 });
 
 Volt::route('two-factor-challenge', 'auth.two-factor-challenge')
-        ->name('two-factor-challenge')->middleware('two-factor-auth');
+        ->name('two-factor-challenge');
 
 Route::post('logout', App\Livewire\Actions\Logout::class)
     ->name('logout');

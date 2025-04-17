@@ -54,12 +54,12 @@ new #[Layout('components.layouts.auth')] class extends Component {
         }
     }
 
-    protected function userHasTwoFactorEnabled(User $userAttemptingLogin): bool
+    protected function userHasTwoFactorEnabled($userAttemptingLogin): bool
     {
         return $userAttemptingLogin->two_factor_confirmed_at !== null;
     }
 
-    protected function redirectTwoFactor(User $userAttemptingLogin): Livewire\Features\SupportRedirects\Redirector
+    protected function redirectTwoFactor($userAttemptingLogin): Livewire\Features\SupportRedirects\Redirector
     {
         // We want this user to login via 2fa
         session()->put([
