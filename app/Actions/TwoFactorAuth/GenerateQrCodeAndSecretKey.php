@@ -2,7 +2,7 @@
 
 namespace App\Actions\TwoFactorAuth;
 
-use BaconQrCode\Renderer\Image\ImagickImageBackEnd;
+use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
 use BaconQrCode\Writer;
@@ -38,7 +38,7 @@ class GenerateQrCodeAndSecretKey
         $writer = new Writer(
             new ImageRenderer(
                 new RendererStyle(800),
-                new ImagickImageBackEnd
+                new SvgImageBackEnd()
             )
         );
 

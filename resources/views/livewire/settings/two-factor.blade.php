@@ -137,7 +137,7 @@ new class extends Component
                                         <flux:icon.loader-circle class="size-6 animate-spin" />
                                     </div>
                                     @if($enabled)
-                                        <img wire:loading.remove wire:target="enable" src="data:image/png;base64, {{ $qr }}" style="width:400px; height:auto" style="relative z-10" />
+                                        <img wire:loading.remove wire:target="enable" src="data:image/svg+xml;base64,{{ $qr }}" style="width:400px; height:auto" style="relative z-10" />
                                     @endif
                                 </div>
                                 @if($enabled)
