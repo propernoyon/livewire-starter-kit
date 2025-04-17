@@ -1,18 +1,17 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Illuminate\Auth\Events\Login;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Validate;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
-use PragmaRX\Google2FA\Google2FA;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Auth;
+use App\Actions\TwoFactorAuth\VerifyTwoFactorCode;
+use App\Actions\TwoFactorAuth\ProcessRecoveryCode;
+use App\Actions\TwoFactorAuth\CompleteTwoFactorAuthentication;
+use App\Actions\TwoFactorAuth\GetTwoFactorAuthenticatableUser;
 
 new #[Layout('components.layouts.auth')] class extends Component
 {
-    
     public $recovery = false;
     public $google2fa;
 
@@ -28,61 +27,59 @@ new #[Layout('components.layouts.auth')] class extends Component
         $this->recovery = false;
     }
 
-     #[On('submitCode')] 
+    #[On('submitCode')] 
     public function submitCode($code)
     {
         $this->auth_code = $code;
         $this->validate();
 
-        // Get the user model from auth config in a single line
-        $user = app(config('auth.providers.users.model'))::find(session()->get('login.id'));
-        $secret = decrypt($user->two_factor_secret);
-        $google2fa = new Google2FA();
-        $valid = $google2fa->verifyKey($secret, $code);
+        // Get the user that is in the process of 2FA
+        $user = (new GetTwoFactorAuthenticatableUser())();
+        
+        if (!$user) {
+            return redirect()->route('login');
+        }
+        
+        // Verify the authentication code
+        $valid = (new VerifyTwoFactorCode())(decrypt($user->two_factor_secret), $code);
 
-        if($valid){
-            $this->loginUser($user);
+        if ($valid) {
+            // Complete the authentication process
+            (new CompleteTwoFactorAuthentication())($user);
+            
+            // Redirect to the intended page
+            return $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
         } else {
             $this->addError('auth_code', 'Invalid authentication code. Please try again.');
         }
-
     }
 
-    public function submit_recovery_code(){
-        // Get the user model from auth config in a single line
-        $user = app(config('auth.providers.users.model'))::find(session()->get('login.id'));
-
-        $recoveryCodeSubmitted = trim($this->recovery_code);
-        // if the user has entered in multiple codes, we will only try to validate the first one.
-        $recoveryCodeSubmitted = explode(" ", $recoveryCodeSubmitted)[0];
+    public function submit_recovery_code()
+    {
+        // Get the user that is in the process of 2FA
+        $user = (new GetTwoFactorAuthenticatableUser())();
         
-        $recoveryCodes = json_decode(decrypt($user->two_factor_recovery_codes));
-        $valid = in_array($recoveryCodeSubmitted, $recoveryCodes);
+        if (!$user) {
+            return redirect()->route('login');
+        }
+        
+        // Process the recovery code
+        $updatedCodes = (new ProcessRecoveryCode())(json_decode(decrypt($user->two_factor_recovery_codes), true), $this->recovery_code);
 
-        if ($valid) {
-            // Remove the used recovery code from the list
-            $recoveryCodes = array_values(array_filter($recoveryCodes, function($code) use ($recoveryCodeSubmitted) {
-                return $code !== $recoveryCodeSubmitted;
-            }));
-            
+        if ($updatedCodes !== false) {
             // Update the user's recovery codes in the database
             $user->forceFill([
-                'two_factor_recovery_codes' => encrypt(json_encode($recoveryCodes))
+                'two_factor_recovery_codes' => encrypt(json_encode($updatedCodes))
             ])->save();
             
-            $this->loginUser($user);
+            // Complete the authentication process
+            (new CompleteTwoFactorAuthentication())($user);
+            
+            // Redirect to the intended page
+            return $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
         } else {
             $this->addError('recovery_code', 'This is an invalid recovery code. Please try again.');
         }
-    }
-
-    public function loginUser($user){
-        Auth::login($user);
-
-        // clear out the session that is used to determine if the user can visit the 2fa challenge page.
-        session()->forget('login.id');
-        
-        $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
     }
 }
 
@@ -97,7 +94,6 @@ new #[Layout('components.layouts.auth')] class extends Component
         @endif
 
         <div class="space-y-5 text-center mt-5">
-
             @if(!$recovery)
                 <div class="relative">
                     <!-- Authentication Code -->
@@ -109,18 +105,7 @@ new #[Layout('components.layouts.auth')] class extends Component
                 <flux:button variant="primary" type="submit" class="w-full" wire:click="submitCode(document.getElementById('auth-input-code').value)">{{ __('Continue') }}</flux:button>
             @else
                 <div class="relative">
-                    <flux:input
-                        x-init="$el.focus();"
-                        wire:keydown.enter="submit_recovery_code"
-                        wire:model="recovery_code"
-                        x-ref="recovery_code"
-                        id="auth-2fa-recovery-code"
-                        :label="__('Recovery Code')"
-                        type="text"
-                        required
-                        autofocus
-                        autocomplete="recovery-code"
-                    />
+                    <flux:input type="text" x-init="$el.focus();" wire:keydown.enter="submit_recovery_code" wire:model="recovery_code" :label="__('Recovery Code')" required autofocus autocomplete="recovery-code" />
                 </div>
                 <flux:button variant="primary" type="submit" class="w-full" wire:click="submit_recovery_code">{{ __('Continue') }}</flux:button>
             @endif
