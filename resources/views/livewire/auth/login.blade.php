@@ -11,7 +11,6 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
 use Livewire\Volt\Component;
 use Illuminate\Http\RedirectResponse;
-use App\Models\User;
 
 new #[Layout('components.layouts.auth')] class extends Component {
     #[Validate('required|string|email')]
@@ -29,7 +28,8 @@ new #[Layout('components.layouts.auth')] class extends Component {
     {
         $this->validate();
 
-        $userAttemptingLogin = User::where('email', $this->email)->first();
+        // Get the user model from auth config in a single line
+        $userAttemptingLogin = app(config('auth.providers.users.model'))::where('email', $this->email)->first();
         if($this->userHasTwoFactorEnabled($userAttemptingLogin)){
             session()->put([
                 'login.id' => $userAttemptingLogin->getKey()

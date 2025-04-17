@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Auth\Events\Login;
 use Livewire\Attributes\On;
@@ -46,7 +45,8 @@ new #[Layout('components.layouts.auth')] class extends Component
         $this->auth_code = $code;
         $this->validate();
 
-        $user = User::find(session()->get('login.id'));
+        // Get the user model from auth config in a single line
+        $user = app(config('auth.providers.users.model'))::find(session()->get('login.id'));
         $secret = decrypt($user->two_factor_secret);
         $google2fa = new Google2FA();
         $valid = $google2fa->verifyKey($secret, $code);
@@ -60,7 +60,8 @@ new #[Layout('components.layouts.auth')] class extends Component
     }
 
     public function submit_recovery_code(){
-        $user = User::find(session()->get('login.id'));
+        // Get the user model from auth config in a single line
+        $user = app(config('auth.providers.users.model'))::find(session()->get('login.id'));
 
         $recoveryCodeSubmitted = trim($this->recovery_code);
         // if the user has entered in multiple codes, we will only try to validate the first one.
