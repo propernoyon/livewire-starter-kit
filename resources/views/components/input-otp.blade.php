@@ -1,7 +1,6 @@
 @props([
     // total number of boxes to display
     'digits' => 4,
-
     'eventCallback' => null
 ])
 
@@ -10,15 +9,12 @@
         total_digits: @js($digits),
         eventCallback: @js($eventCallback),
         moveCursorNext (index, digits, evt) {
-        
             if (!isNaN(parseInt(evt.key)) && parseInt(evt.key) >= 0 && parseInt(evt.key) <= 9 && index != digits) {
                 evt.preventDefault();
                 evt.stopPropagation();
                 this.$refs['input' + index].value = evt.key;
                 this.$refs['input' + (index+1)].focus();
-                
             } else {
-
                 if (evt.key === 'Backspace') {
                     evt.preventDefault();
                     evt.stopPropagation();
@@ -34,12 +30,8 @@
                     } else {
                         this.$refs['input' + index].value = '';
                     }
-                } else {
-                    
-                }
-
+                } 
             }
-
             let that = this;
             setTimeout(function(){
                 that.$refs.pin.value = that.generateCode();
@@ -47,11 +39,6 @@
                     that.submitCallback();
                 }
             }, 100);
-
-            {{-- console.log(this.generateCode()); --}}
-
-
-
         },
         submitCallback(){
             if(this.eventCallback){
@@ -60,7 +47,6 @@
         },
         pasteValue(event){
             event.preventDefault();
-            {{-- let paste = (event.clipboardData || window.clipboardData).getData('text'); --}}
             let paste = (event.clipboardData || window.clipboardData).getData('text');
             for (let i = 0; i < paste.length; i++) {
                 if (i < this.total_digits) {
