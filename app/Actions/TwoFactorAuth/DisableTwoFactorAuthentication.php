@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Actions;
+namespace App\Actions\TwoFactorAuth;
 
 // use App\Events\TwoFactorAuthenticationDisabled;
 use App\Models\User;

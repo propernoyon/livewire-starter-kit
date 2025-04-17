@@ -3,9 +3,9 @@
 use Livewire\Volt\Component;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Validate;
-use App\Actions\DisableTwoFactorAuthentication;
-use App\Actions\GenerateNewRecoveryCodes;
-use App\Actions\GenerateQrCodeAndSecretKey;
+use App\Actions\TwoFactorAuth\DisableTwoFactorAuthentication;
+use App\Actions\TwoFactorAuth\GenerateNewRecoveryCodes;
+use App\Actions\TwoFactorAuth\GenerateQrCodeAndSecretKey;
 use PragmaRX\Google2FA\Google2FA;
 
 new class extends Component

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Actions;
+namespace App\Actions\TwoFactorAuth;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;

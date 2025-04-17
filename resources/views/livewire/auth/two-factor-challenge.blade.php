@@ -23,6 +23,9 @@ new #[Layout('components.layouts.auth')] class extends Component
 
     public function mount()
     {
+        if ( !session()->has('login.id')) {
+            return redirect()->route('login');
+        }
         $this->recovery = false;
     }
 
