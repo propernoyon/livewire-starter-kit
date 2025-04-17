@@ -212,7 +212,7 @@ new class extends Component
                     <p>With two factor authentication enabled, you’ll be prompted for a secure, random token during login, which you can retrieve from your Google Authenticator app.</p>    
 
                     <div>
-                        <flux:callout icon="file-digit" color="gray" inline class="rounded-b-none">
+                        <flux:callout icon="lock-keyhole-open" color="gray" inline class="rounded-b-none">
                             <flux:callout.heading>2FA Recovery Codes</flux:callout.heading>
                             <flux:callout.text>
                                 Recovery codes let you regain access if you lose your 2FA device. Store them in a secure password manager.
