@@ -22,10 +22,6 @@ new #[Layout('components.layouts.auth')] class extends Component {
 
     public bool $remember = false;
 
-    public function mount(){
-     //   dd(session()->get('login.id'));
-    }
-
     /**
      * Handle an incoming authentication request.
      */

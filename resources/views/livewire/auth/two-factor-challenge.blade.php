@@ -23,7 +23,6 @@ new #[Layout('components.layouts.auth')] class extends Component
 
     public function mount()
     {
-        // dd(session()->get('login.id'));
         $this->recovery = false;
     }
 
@@ -45,7 +44,6 @@ new #[Layout('components.layouts.auth')] class extends Component
         $this->validate();
 
         $user = User::find(session()->get('login.id'));
-        // dd(session()->get('login.id'));
         $secret = decrypt($user->two_factor_secret);
         $google2fa = new Google2FA();
         $valid = $google2fa->verifyKey($secret, $code);
@@ -60,9 +58,25 @@ new #[Layout('components.layouts.auth')] class extends Component
 
     public function submit_recovery_code(){
         $user = User::find(session()->get('login.id'));
-        $valid = in_array($this->recovery_code, json_decode(decrypt($user->two_factor_recovery_codes)));
+
+        $recoveryCodeSubmitted = trim($this->recovery_code);
+        // if the user has entered in multiple codes, we will only try to validate the first one.
+        $recoveryCodeSubmitted = explode(" ", $recoveryCodeSubmitted)[0];
+        
+        $recoveryCodes = json_decode(decrypt($user->two_factor_recovery_codes));
+        $valid = in_array($recoveryCodeSubmitted, $recoveryCodes);
 
         if ($valid) {
+            // Remove the used recovery code from the list
+            $recoveryCodes = array_values(array_filter($recoveryCodes, function($code) use ($recoveryCodeSubmitted) {
+                return $code !== $recoveryCodeSubmitted;
+            }));
+            
+            // Update the user's recovery codes in the database
+            $user->forceFill([
+                'two_factor_recovery_codes' => encrypt(json_encode($recoveryCodes))
+            ])->save();
+            
             $this->loginUser($user);
         } else {
             $this->addError('recovery_code', 'This is an invalid recovery code. Please try again.');
@@ -91,10 +105,10 @@ new #[Layout('components.layouts.auth')] class extends Component
             <x-auth-header :title="__('Recovery Code')" :description="__('Please confirm access to your account by entering one of your emergency recovery codes.')" />
         @endif
 
-        <div class="space-y-5 text-center">
+        <div class="space-y-5 text-center mt-5">
 
             @if(!$recovery)
-                <div class="relative mt-5">
+                <div class="relative">
                     <!-- Authentication Code -->
                     <x-input-otp wire:model="auth_code" id="auth-input-code" digits="6" eventCallback="code-input-complete" type="text" label="Code" />
                 </div>
