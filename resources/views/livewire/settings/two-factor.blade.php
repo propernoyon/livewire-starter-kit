@@ -6,6 +6,8 @@ use Livewire\Attributes\Validate;
 use App\Actions\TwoFactorAuth\DisableTwoFactorAuthentication;
 use App\Actions\TwoFactorAuth\GenerateNewRecoveryCodes;
 use App\Actions\TwoFactorAuth\GenerateQrCodeAndSecretKey;
+use App\Actions\TwoFactorAuth\VerifyTwoFactorCode;
+use App\Actions\TwoFactorAuth\ConfirmTwoFactorAuthentication;
 use PragmaRX\Google2FA\Google2FA;
 
 new class extends Component
@@ -36,8 +38,7 @@ new class extends Component
 
     public function enable(){
 
-        $QrCodeAndSecret = new GenerateQrCodeAndSecretKey();
-        [$this->qr, $this->secret] = $QrCodeAndSecret(auth()->user());
+        [$this->qr, $this->secret] = app(GenerateQrCodeAndSecretKey::class)(auth()->user());
         
         auth()->user()->forceFill([
             'two_factor_secret' => encrypt($this->secret),
@@ -48,8 +49,7 @@ new class extends Component
     }
 
     private function generateCodes(){
-        $generateCodesFor = new GenerateNewRecoveryCodes();
-        return $generateCodesFor(auth()->user());
+        return app(GenerateNewRecoveryCodes::class)(auth()->user());
     }
 
     public function regenerateCodes(){
@@ -59,11 +59,7 @@ new class extends Component
     }
 
     public function cancelTwoFactor(){
-        auth()->user()->forceFill([
-            'two_factor_secret' => null,
-            'two_factor_recovery_codes' => null
-        ])->save();
-
+        app(DisableTwoFactorAuthentication::class)(auth()->user());
         $this->enabled = false;
     }
 
@@ -73,14 +69,10 @@ new class extends Component
         $this->auth_code = $code;
         $this->validate();
 
-        $google2fa = new Google2FA();
-        $valid = $google2fa->verifyKey($this->secret, $code);
+        $valid = app(VerifyTwoFactorCode::class)(decrypt($this->secret), $code);
 
         if($valid){
-            auth()->user()->forceFill([
-                'two_factor_confirmed_at' => now(),
-            ])->save();
-
+            app(ConfirmTwoFactorAuthentication::class)(auth()->user());
             $this->confirmed = true;
         } else {
             $this->addError('auth_code', 'Invalid authentication code. Please try again.');
@@ -88,8 +80,7 @@ new class extends Component
     }
 
     public function disable(){
-        $disable = new DisableTwoFactorAuthentication;
-        $disable(auth()->user());
+        app(DisableTwoFactorAuthentication::class)(auth()->user());
 
         $this->enabled = false;
         $this->confirmed = false;

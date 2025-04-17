@@ -13,7 +13,6 @@ use App\Actions\TwoFactorAuth\GetTwoFactorAuthenticatableUser;
 new #[Layout('components.layouts.auth')] class extends Component
 {
     public $recovery = false;
-    public $google2fa;
 
     #[Validate('required|min:6')] 
     public $auth_code;
@@ -34,18 +33,18 @@ new #[Layout('components.layouts.auth')] class extends Component
         $this->validate();
 
         // Get the user that is in the process of 2FA
-        $user = (new GetTwoFactorAuthenticatableUser())();
+        $user = app(GetTwoFactorAuthenticatableUser::class)();
         
         if (!$user) {
             return redirect()->route('login');
         }
         
         // Verify the authentication code
-        $valid = (new VerifyTwoFactorCode())(decrypt($user->two_factor_secret), $code);
+        $valid = app(VerifyTwoFactorCode::class)(decrypt($user->two_factor_secret), $code);
 
         if ($valid) {
             // Complete the authentication process
-            (new CompleteTwoFactorAuthentication())($user);
+            app(CompleteTwoFactorAuthentication::class)($user);
             
             // Redirect to the intended page
             return $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
@@ -57,14 +56,14 @@ new #[Layout('components.layouts.auth')] class extends Component
     public function submit_recovery_code()
     {
         // Get the user that is in the process of 2FA
-        $user = (new GetTwoFactorAuthenticatableUser())();
+        $user = app(GetTwoFactorAuthenticatableUser::class)();
         
         if (!$user) {
             return redirect()->route('login');
         }
         
         // Process the recovery code
-        $updatedCodes = (new ProcessRecoveryCode())(json_decode(decrypt($user->two_factor_recovery_codes), true), $this->recovery_code);
+        $updatedCodes = app(ProcessRecoveryCode::class)(json_decode(decrypt($user->two_factor_recovery_codes), true), $this->recovery_code);
 
         if ($updatedCodes !== false) {
             // Update the user's recovery codes in the database
@@ -73,7 +72,7 @@ new #[Layout('components.layouts.auth')] class extends Component
             ])->save();
             
             // Complete the authentication process
-            (new CompleteTwoFactorAuthentication())($user);
+            app(CompleteTwoFactorAuthentication::class)($user);
             
             // Redirect to the intended page
             return $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
