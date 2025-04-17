@@ -69,7 +69,7 @@ new class extends Component
         $this->auth_code = $code;
         $this->validate();
 
-        $valid = app(VerifyTwoFactorCode::class)(decrypt($this->secret), $code);
+        $valid = app(VerifyTwoFactorCode::class)($this->secret, $code);
 
         if($valid){
             app(ConfirmTwoFactorAuthentication::class)(auth()->user());
