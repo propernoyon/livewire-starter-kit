@@ -2,7 +2,6 @@
 
 namespace App\Actions\TwoFactorAuth;
 
-// use App\Events\TwoFactorAuthenticationDisabled;
 use App\Models\User;
 
 class DisableTwoFactorAuthentication
@@ -22,8 +21,6 @@ class DisableTwoFactorAuthentication
                 'two_factor_recovery_codes' => null,
                 'two_factor_confirmed_at' => null,
             ])->save();
-
-            //TwoFactorAuthenticationDisabled::dispatch($user);
         }
     }
 }

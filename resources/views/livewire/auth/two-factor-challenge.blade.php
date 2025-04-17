@@ -28,17 +28,6 @@ new #[Layout('components.layouts.auth')] class extends Component
         $this->recovery = false;
     }
 
-    public function switchToRecovery()
-    {
-        $this->recovery = !$this->recovery;
-        if($this->recovery){
-            $this->js("setTimeout(function(){ window.dispatchEvent(new CustomEvent('focus-auth-2fa-recovery-code', {})); }, 10);");
-        } else {
-            $this->js("setTimeout(function(){ window.dispatchEvent(new CustomEvent('focus-auth-2fa-auth-code', {})); }, 10);");
-        }
-        return;
-    }
-
      #[On('submitCode')] 
     public function submitCode($code)
     {
@@ -92,8 +81,6 @@ new #[Layout('components.layouts.auth')] class extends Component
 
         // clear out the session that is used to determine if the user can visit the 2fa challenge page.
         session()->forget('login.id');
-
-        event(new Login(auth()->guard('web'), $user, true));
         
         $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
     }
@@ -123,8 +110,10 @@ new #[Layout('components.layouts.auth')] class extends Component
             @else
                 <div class="relative">
                     <flux:input
+                        x-init="$el.focus();"
                         wire:keydown.enter="submit_recovery_code"
                         wire:model="recovery_code"
+                        x-ref="recovery_code"
                         id="auth-2fa-recovery-code"
                         :label="__('Recovery Code')"
                         type="text"
@@ -139,13 +128,13 @@ new #[Layout('components.layouts.auth')] class extends Component
 
         <div class="mt-5 space-x-0.5 text-sm leading-5 text-center text-black dark:text-white">
             <span class="opacity-[47%]">or you can </span>
-            <span class="font-medium underline opacity-60 cursor-pointer" wire:click="switchToRecovery" href="#_">
+            <div class="font-medium underline opacity-60 cursor-pointer inline">
                 @if(!$recovery)
-                    <span>login using a recovery code</span>
+                    <span wire:click="$set('recovery', true)">login using a recovery code</span>
                 @else
-                    <span>login using an authentication code</span>
+                    <span wire:click="$set('recovery', false)">login using an authentication code</span>
                 @endif
-            </span>
+            </div>
         </div>
     </div>
 </div>
