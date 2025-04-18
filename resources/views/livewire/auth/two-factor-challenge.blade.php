@@ -1,14 +1,14 @@
 <?php
 
+use App\Actions\TwoFactorAuth\VerifyTwoFactorCode;
+use App\Actions\TwoFactorAuth\ProcessRecoveryCode;
+use App\Actions\TwoFactorAuth\CompleteTwoFactorAuthentication;
+use App\Actions\TwoFactorAuth\GetTwoFactorAuthenticatableUser;
 use Illuminate\Support\Facades\Route;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Validate;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
-use App\Actions\TwoFactorAuth\VerifyTwoFactorCode;
-use App\Actions\TwoFactorAuth\ProcessRecoveryCode;
-use App\Actions\TwoFactorAuth\CompleteTwoFactorAuthentication;
-use App\Actions\TwoFactorAuth\GetTwoFactorAuthenticatableUser;
 
 new #[Layout('components.layouts.auth')] class extends Component
 {
