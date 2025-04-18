@@ -34,7 +34,6 @@ class VerifyEmailController extends Controller
             event(new Verified($user));
         }
         
-        // Always log the user in, regardless of verification status
         Auth::login($user);
 
         return redirect()->intended(route('dashboard', absolute: false).'?verified=1');
