@@ -28,6 +28,19 @@ new #[Layout('components.layouts.auth')] class extends Component {
     {
         $this->validate();
 
+        $this->ensureIsNotRateLimited();
+
+        if (! Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'email' => __('auth.failed'),
+            ]);
+        }
+
+        RateLimiter::clear($this->throttleKey());
+        Session::regenerate();
+
         // Get the user model from auth config in a single line
         $userAttemptingLogin = app(config('auth.providers.users.model'))::where('email', $this->email)->first();
         if($this->userHasTwoFactorEnabled($userAttemptingLogin)){
@@ -35,23 +48,10 @@ new #[Layout('components.layouts.auth')] class extends Component {
                 'login.id' => $userAttemptingLogin->getKey()
             ]);
             $this->redirectTwoFactor($userAttemptingLogin);
-        } else {
-
-            $this->ensureIsNotRateLimited();
-
-            if (! Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
-                RateLimiter::hit($this->throttleKey());
-
-                throw ValidationException::withMessages([
-                    'email' => __('auth.failed'),
-                ]);
-            }
-
-            RateLimiter::clear($this->throttleKey());
-            Session::regenerate();
-
-            $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
+            return;
         }
+
+        $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
     }
 
     protected function userHasTwoFactorEnabled($userAttemptingLogin): bool
