@@ -30,7 +30,10 @@ new #[Layout('components.layouts.auth')] class extends Component {
 
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
+        // Get the user model from auth config in a single line
+        $userAttemptingLogin = app(config('auth.providers.users.model'))::where('email', $this->email)->first();
+
+        if (! $userAttemptingLogin || ! \Illuminate\Support\Facades\Hash::check($this->password, $userAttemptingLogin->password)) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
@@ -38,19 +41,26 @@ new #[Layout('components.layouts.auth')] class extends Component {
             ]);
         }
 
-        RateLimiter::clear($this->throttleKey());
-        Session::regenerate();
-
-        // Get the user model from auth config in a single line
-        $userAttemptingLogin = app(config('auth.providers.users.model'))::where('email', $this->email)->first();
         if($this->userHasTwoFactorEnabled($userAttemptingLogin)){
+            // Store login.id in session and redirect to 2FA challenge, do NOT authenticate yet
             session()->put([
                 'login.id' => $userAttemptingLogin->getKey()
             ]);
+            RateLimiter::clear($this->throttleKey());
             $this->redirectTwoFactor($userAttemptingLogin);
             return;
         }
 
+        // No 2FA: authenticate as normal
+        if (! Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
+            // This should not happen, but fallback for safety
+            RateLimiter::hit($this->throttleKey());
+            throw ValidationException::withMessages([
+                'email' => __('auth.failed'),
+            ]);
+        }
+        RateLimiter::clear($this->throttleKey());
+        Session::regenerate();
         $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
     }
 
