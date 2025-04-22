@@ -4,6 +4,7 @@ use App\Actions\TwoFactorAuth\VerifyTwoFactorCode;
 use App\Actions\TwoFactorAuth\ProcessRecoveryCode;
 use App\Actions\TwoFactorAuth\CompleteTwoFactorAuthentication;
 use App\Actions\TwoFactorAuth\GetTwoFactorAuthenticatableUser;
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
@@ -52,12 +53,12 @@ new #[Layout('components.layouts.auth')] class extends Component
             app(CompleteTwoFactorAuthentication::class)($user);
             
             // Clear rate limiter on successful authentication
-            RateLimiter::clear($this->throttleKey());
+            RateLimiter::clear($this->throttleKey($user));
             
             // Redirect to the intended page
             return $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
         } else {
-            RateLimiter::hit($this->throttleKey());
+            RateLimiter::hit($this->throttleKey($user));
             $this->addError('auth_code', 'Invalid authentication code. Please try again.');
         }
     }
@@ -84,12 +85,12 @@ new #[Layout('components.layouts.auth')] class extends Component
             app(CompleteTwoFactorAuthentication::class)($user);
 
             // Clear rate limiter on successful authentication
-            RateLimiter::clear($this->throttleKey());
+            RateLimiter::clear($this->throttleKey($user));
             
             // Redirect to the intended page
             return $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
         } else {
-            RateLimiter::hit($this->throttleKey());
+            RateLimiter::hit($this->throttleKey($user));
             $this->addError('recovery_code', 'This is an invalid recovery code. Please try again.');
         }
     }
@@ -118,11 +119,9 @@ new #[Layout('components.layouts.auth')] class extends Component
     /**
      * Get the rate limiting throttle key for the two-factor challenge.
      */
-    protected function throttleKey(): string
+    protected function throttleKey(User $user): string
     {
-        $user = app(GetTwoFactorAuthenticatableUser::class)();
-        $userId = $user ? $user->id : request()->ip();
-        return $userId . '|2fa|' . request()->ip();
+        return Str::transliterate($user->id . '|2fa|' . request()->ip());
     }
 }
 
