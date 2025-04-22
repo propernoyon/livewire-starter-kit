@@ -26,7 +26,7 @@ class ProcessRecoveryCode
         
         // Remove the used recovery code from the list
         $updatedCodes = array_values(array_filter($recoveryCodes, function($code) use ($submittedCode) {
-            return $code !== $submittedCode;
+            return !hash_equals($code, $submittedCode);
         }));
         
         return $updatedCodes;

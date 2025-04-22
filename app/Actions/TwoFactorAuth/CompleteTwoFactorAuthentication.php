@@ -15,10 +15,13 @@ class CompleteTwoFactorAuthentication
      */
     public function __invoke($user): void
     {
-        // Log the user in
-        Auth::login($user);
+        // Get the remember preference from the session (default to false if not set)
+        $remember = Session::get('login.remember', false);
+        
+        // Log the user in with the remember preference
+        Auth::login($user, $remember);
 
-        // Clear the session that is used to determine if the user can visit the 2fa challenge page
-        Session::forget('login.id');
+        // Clear the session variables used for the 2FA challenge
+        Session::forget(['login.id', 'login.remember']);
     }
 }

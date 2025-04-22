@@ -42,9 +42,10 @@ new #[Layout('components.layouts.auth')] class extends Component {
         }
 
         if($this->userHasTwoFactorEnabled($userAttemptingLogin)){
-            // Store login.id in session and redirect to 2FA challenge, do NOT authenticate yet
+            // Store login.id and remember in session and redirect to 2FA challenge, do NOT authenticate yet
             session()->put([
-                'login.id' => $userAttemptingLogin->getKey()
+                'login.id' => $userAttemptingLogin->getKey(),
+                'login.remember' => $this->remember
             ]);
             RateLimiter::clear($this->throttleKey());
             $this->redirectTwoFactor($userAttemptingLogin);
