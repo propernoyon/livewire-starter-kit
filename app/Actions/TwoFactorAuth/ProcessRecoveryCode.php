@@ -11,8 +11,10 @@ class ProcessRecoveryCode
      * @param  string  $submittedCode The code submitted by the user
      * @return array|false Returns the updated array of recovery codes if valid, or false if invalid
      */
-    public function __invoke(array $recoveryCodes, string $submittedCode)
-    {
+    public function __invoke(
+        #[\SensitiveParameter] array $recoveryCodes, 
+        #[\SensitiveParameter] string $submittedCode
+    ) {
         // Clean the submitted code
         $submittedCode = trim($submittedCode);
         
