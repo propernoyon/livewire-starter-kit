@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -32,7 +33,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
         $this->ensureIsNotRateLimited();
 
         // Get the user model from auth config in a single line
-        $userAttemptingLogin = app(config('auth.providers.users.model'))::where('email', $this->email)->first();
+        $userAttemptingLogin = User::where('email', $this->email)->first();
 
         if (! $userAttemptingLogin || ! Hash::check($this->password, $userAttemptingLogin->password)) {
             RateLimiter::hit($this->throttleKey());
