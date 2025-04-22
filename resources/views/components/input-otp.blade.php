@@ -85,11 +85,13 @@
             @for ($x = 1; $x <= $digits; $x++)
                 <input
                     x-ref="input{{ $x }}"
-                    numeric="true"
-                    type="number"
+                    type="text"
+                    inputmode="numeric"
+                    pattern="[0-9]"
                     x-on:paste="pasteValue"
                     x-on:keydown="moveCursorNext({{ $x }}, {{ $digits }}, event)"
                     x-on:focus="$el.select()"
+                    x-on:input="$el.value = $el.value.replace(/[^0-9]/g, '').slice(0, 1)"
                     class="w-12 h-12 font-light text-center text-black dark:text-stone-100 rounded-md border shadow-sm appearance-none auth-component-code-input dark:text-dark-400 border-stone-200 dark:border-stone-700 focus:border-2"
                     maxlength="1"
                 />
