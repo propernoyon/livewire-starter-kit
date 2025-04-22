@@ -4,6 +4,9 @@ use App\Actions\TwoFactorAuth\VerifyTwoFactorCode;
 use App\Actions\TwoFactorAuth\ProcessRecoveryCode;
 use App\Actions\TwoFactorAuth\CompleteTwoFactorAuthentication;
 use App\Actions\TwoFactorAuth\GetTwoFactorAuthenticatableUser;
+use Illuminate\Auth\Events\Lockout;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Route;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Validate;
@@ -32,6 +35,8 @@ new #[Layout('components.layouts.auth')] class extends Component
         $this->auth_code = $code;
         $this->validate();
 
+        $this->ensureIsNotRateLimited();
+
         // Get the user that is in the process of 2FA
         $user = app(GetTwoFactorAuthenticatableUser::class)();
         
@@ -46,9 +51,13 @@ new #[Layout('components.layouts.auth')] class extends Component
             // Complete the authentication process
             app(CompleteTwoFactorAuthentication::class)($user);
             
+            // Clear rate limiter on successful authentication
+            RateLimiter::clear($this->throttleKey());
+            
             // Redirect to the intended page
             return $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
         } else {
+            RateLimiter::hit($this->throttleKey());
             $this->addError('auth_code', 'Invalid authentication code. Please try again.');
         }
     }
@@ -73,12 +82,47 @@ new #[Layout('components.layouts.auth')] class extends Component
             
             // Complete the authentication process
             app(CompleteTwoFactorAuthentication::class)($user);
+
+            // Clear rate limiter on successful authentication
+            RateLimiter::clear($this->throttleKey());
             
             // Redirect to the intended page
             return $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
         } else {
+            RateLimiter::hit($this->throttleKey());
             $this->addError('recovery_code', 'This is an invalid recovery code. Please try again.');
         }
+    }
+
+    /**
+     * Ensure the two-factor authentication request is not rate limited.
+     */
+     protected function ensureIsNotRateLimited(): void
+    {
+        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+            return;
+        }
+
+        event(new Lockout(request()));
+
+        $seconds = RateLimiter::availableIn($this->throttleKey());
+
+        throw ValidationException::withMessages([
+            'auth_code' => __('auth.throttle', [
+                'seconds' => $seconds,
+                'minutes' => ceil($seconds / 60),
+            ]),
+        ]);
+    }
+
+    /**
+     * Get the rate limiting throttle key for the two-factor challenge.
+     */
+    protected function throttleKey(): string
+    {
+        $user = app(GetTwoFactorAuthenticatableUser::class)();
+        $userId = $user ? $user->id : request()->ip();
+        return $userId . '|2fa|' . request()->ip();
     }
 }
 

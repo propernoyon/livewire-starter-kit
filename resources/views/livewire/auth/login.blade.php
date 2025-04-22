@@ -2,6 +2,7 @@
 
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
@@ -33,7 +34,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
         // Get the user model from auth config in a single line
         $userAttemptingLogin = app(config('auth.providers.users.model'))::where('email', $this->email)->first();
 
-        if (! $userAttemptingLogin || ! \Illuminate\Support\Facades\Hash::check($this->password, $userAttemptingLogin->password)) {
+        if (! $userAttemptingLogin || ! Hash::check($this->password, $userAttemptingLogin->password)) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
