@@ -17,7 +17,7 @@ class CompleteTwoFactorAuthentication
     {
         // Get the remember preference from the session (default to false if not set)
         $remember = Session::get('login.remember', false);
-        
+
         // Log the user in with the remember preference
         Auth::login($user, $remember);
 

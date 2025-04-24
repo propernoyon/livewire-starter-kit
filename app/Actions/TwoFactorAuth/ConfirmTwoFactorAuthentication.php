@@ -15,7 +15,7 @@ class ConfirmTwoFactorAuthentication
         $user->forceFill([
             'two_factor_confirmed_at' => now(),
         ])->save();
-        
+
         return true;
     }
 }

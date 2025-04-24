@@ -20,11 +20,11 @@ class GenerateQrCodeAndSecretKey
      */
     public function __invoke($user): array
     {
-
         $google2fa = new Google2FA;
         $secret_key = $google2fa->generateSecretKey();
 
         $this->companyName = 'Auth';
+
         if (is_string(config('app.name'))) {
             $this->companyName = config('app.name');
         }
@@ -45,6 +45,5 @@ class GenerateQrCodeAndSecretKey
         $qrcode_image = base64_encode($writer->writeString($g2faUrl));
 
         return [$qrcode_image, $secret_key];
-
     }
 }

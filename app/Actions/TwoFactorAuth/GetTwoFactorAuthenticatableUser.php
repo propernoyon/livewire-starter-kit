@@ -14,14 +14,14 @@ class GetTwoFactorAuthenticatableUser
     public function __invoke()
     {
         $userId = Session::get('login.id');
-        
+
         if (!$userId) {
             return null;
         }
-        
+
         // Get the user model from auth config
         $userModel = app(config('auth.providers.users.model'));
-        
+
         return $userModel::find($userId);
     }
 }

@@ -51,15 +51,16 @@
             if (i < this.total_digits) {
                 this.$refs['input' + (i + 1)].value = paste[i];
             }
+
             let focusLastInput = (paste.length <= this.total_digits) ? paste.length : this.total_digits;
             this.$refs['input' + focusLastInput].focus();
+
             if (paste.length >= this.total_digits) {
                 let that = this;
                 setTimeout(function() {
                     that.$refs.pin.value = that.generateCode();
                     that.submitCallback();
                 }, 100);
-
             }
         }
     },

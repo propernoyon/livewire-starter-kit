@@ -28,7 +28,7 @@ new class extends Component
     public $showRecoveryCodes = true;
     
     public function mount(){
-        if(is_null(auth()->user()->two_factor_confirmed_at)) {
+        if (is_null(auth()->user()->two_factor_confirmed_at)) {
             app(DisableTwoFactorAuthentication::class)(auth()->user());
         } else {
             $this->confirmed = true;
@@ -71,7 +71,7 @@ new class extends Component
 
         $valid = app(VerifyTwoFactorCode::class)($this->secret, $code);
 
-        if($valid){
+        if ($valid){
             app(ConfirmTwoFactorAuthentication::class)(auth()->user());
             $this->confirmed = true;
         } else {
