@@ -9,7 +9,6 @@ use Tests\TestCase;
 use App\Actions\TwoFactorAuth\GenerateQrCodeAndSecretKey;
 use App\Actions\TwoFactorAuth\GenerateNewRecoveryCodes;
 use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Hash;
 
 class TwoFactorAuthTest extends TestCase
 {

@@ -6,22 +6,26 @@ use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
 use BaconQrCode\Writer;
-use App\Models\User;
 use PragmaRX\Google2FA\Google2FA;
 
 class GenerateQrCodeAndSecretKey
 {
+    /**
+     * The length of the secret key to generate.
+     */
+    private static int $SECRET_KEY_LENGTH = 16;
+    
     public string $companyName;
 
     /**
-     * Generate new recovery codes for the user.
+     * Generate a QR code image and secret key for the user.
      *
      * @return array{string, string}
      */
     public function __invoke($user): array
     {
         $google2fa = new Google2FA;
-        $secret_key = $google2fa->generateSecretKey();
+        $secret_key = $google2fa->generateSecretKey(self::$SECRET_KEY_LENGTH);
 
         $this->companyName = 'Auth';
 
@@ -37,7 +41,7 @@ class GenerateQrCodeAndSecretKey
 
         $writer = new Writer(
             new ImageRenderer(
-                new RendererStyle(800),
+                new RendererStyle(400),
                 new SvgImageBackEnd()
             )
         );

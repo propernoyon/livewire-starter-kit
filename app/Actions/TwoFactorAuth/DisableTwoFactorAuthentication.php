@@ -2,8 +2,6 @@
 
 namespace App\Actions\TwoFactorAuth;
 
-use App\Models\User;
-
 class DisableTwoFactorAuthentication
 {
     /**

@@ -10,10 +10,9 @@ class GenerateNewRecoveryCodes
     /**
      * Generate new recovery codes for the user.
      *
-     * @param  mixed  $user
      * @return void
      */
-    public function __invoke($user): Collection
+    public function __invoke(): Collection
     {
         return Collection::times(8, function () {
             return $this->generate();

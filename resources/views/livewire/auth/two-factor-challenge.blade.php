@@ -36,14 +36,14 @@ new #[Layout('components.layouts.auth')] class extends Component
         $this->auth_code = $code;
         $this->validate();
 
-        $this->ensureIsNotRateLimited();
-
         // Get the user that is in the process of 2FA
         $user = app(GetTwoFactorAuthenticatableUser::class)();
         
         if (!$user) {
             return redirect()->route('login');
         }
+
+        $this->ensureIsNotRateLimited($user);
         
         // Verify the authentication code
         $valid = app(VerifyTwoFactorCode::class)(decrypt($user->two_factor_secret), $code);
@@ -71,6 +71,8 @@ new #[Layout('components.layouts.auth')] class extends Component
         if (!$user) {
             return redirect()->route('login');
         }
+
+        $this->ensureIsNotRateLimited($user);
         
         // Process the recovery code
         $updatedCodes = app(ProcessRecoveryCode::class)(json_decode(decrypt($user->two_factor_recovery_codes), true), $this->recovery_code);
@@ -98,15 +100,15 @@ new #[Layout('components.layouts.auth')] class extends Component
     /**
      * Ensure the two-factor authentication request is not rate limited.
      */
-     protected function ensureIsNotRateLimited(): void
+    protected function ensureIsNotRateLimited(User $user): void
     {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+        if (! RateLimiter::tooManyAttempts($this->throttleKey($user), 5)) {
             return;
         }
 
         event(new Lockout(request()));
 
-        $seconds = RateLimiter::availableIn($this->throttleKey());
+        $seconds = RateLimiter::availableIn($this->throttleKey($user));
 
         throw ValidationException::withMessages([
             'auth_code' => __('auth.throttle', [
@@ -121,7 +123,7 @@ new #[Layout('components.layouts.auth')] class extends Component
      */
     protected function throttleKey(User $user): string
     {
-        return Str::transliterate($user->id . '|2fa|' . request()->ip());
+        return Str::transliterate($user->id . '|2fa');
     }
 }
 

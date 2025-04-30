@@ -74,4 +74,5 @@ select:focus[data-flux-control] {
 }
 .input-otp input[type=number] {
   -moz-appearance: textfield;
+  appearance: none;
 }
