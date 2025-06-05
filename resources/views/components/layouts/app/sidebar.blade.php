@@ -30,12 +30,12 @@
             </flux:navlist>
 
             <!-- Desktop User Menu -->
-            <flux:dropdown position="bottom" align="start">
+            <flux:dropdown class="hidden lg:block" position="bottom" align="start">
                 <flux:profile
                     :name="auth()->user()->name"
                     :avatar="auth()->user()->avatar ?: null"
                     :initials="auth()->user()->initials()"
-                    icon-trailing="chevrons-up-down"
+                    icon:trailing="chevrons-up-down"
                 />
 
                 <flux:menu class="w-[220px]">
