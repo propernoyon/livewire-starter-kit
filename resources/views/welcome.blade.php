@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>Laravel</title>
+        <title>MATC POS</title>
 
         <link rel="icon" href="/favicon.ico" sizes="any">
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -52,7 +52,15 @@
         </header>
         <div class="flex items-center justify-center w-full transition-opacity opacity-100 duration-750 lg:grow starting:opacity-0">
             <main class="flex max-w-[335px] w-full flex-col-reverse lg:max-w-4xl lg:flex-row">
-                
+       <div class="relative w-full h-screen overflow-hidden">
+    <!-- Fixed Banner Image -->
+    <img src="{{ asset('banner.png') }}" alt="Banner" 
+     class="fixed top-0 left-0 z-0 object-contain">
+
+    <!-- Overlay for readability -->
+    <div class="absolute inset-0 bg-black/40 z-10"></div>
+</div>
+
              
             </main>
         </div>

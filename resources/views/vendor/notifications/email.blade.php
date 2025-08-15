@@ -1,7 +1,7 @@
 <x-mail::message>
 {{-- Header Logo --}}
 <div style="text-align: center; margin-bottom: 20px;">
-    <img src="{{ asset('logo.jpg') }}" alt="MATC Corp." style="height: 60px;">
+    <img src="{{ $message->embed(public_path('logo.jpg')) }}" alt="MATC Corp." style="height: 60px;">
 </div>
 
 {{-- Greeting --}}
