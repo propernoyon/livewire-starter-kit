@@ -3,13 +3,14 @@
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
 use Livewire\Volt\Component;
+use App\Models\User;
+use Carbon\Carbon;
 
 new #[Layout('components.layouts.auth')] class extends Component {
     #[Validate('required|string|email')]
@@ -26,12 +27,35 @@ new #[Layout('components.layouts.auth')] class extends Component {
     public function login(): void
     {
         $this->validate();
-
         $this->ensureIsNotRateLimited();
 
+        // Step 1: 
+        $user = User::where('email', $this->email)->first();
+
+        if (! $user) {
+            RateLimiter::hit($this->throttleKey());
+            throw ValidationException::withMessages([
+                'email' => __('auth.failed'),
+            ]);
+        }
+
+        // Step 2: Status 
+        if ($user->status !== 'Active') {
+            throw ValidationException::withMessages([
+                'email' => 'Your account is not active. Please contact support.',
+            ]);
+        }
+
+        // Step 3: Expire Date 
+        if ($user->expire_date && Carbon::now()->gt(Carbon::parse($user->expire_date))) {
+            throw ValidationException::withMessages([
+                'email' => 'Your account has expired. Please renew your subscription.',
+            ]);
+        }
+
+        // Step 4: Auth Attempt
         if (! Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
             RateLimiter::hit($this->throttleKey());
-
             throw ValidationException::withMessages([
                 'email' => __('auth.failed'),
             ]);
@@ -88,7 +112,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
             required
             autofocus
             autocomplete="email"
-            placeholder="email@example.com"
+            placeholder="example@gmail.com"
         />
 
         <!-- Password -->
