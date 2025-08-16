@@ -11,10 +11,12 @@ class OtpNotification extends Notification
     use Queueable;
 
     public string $otp;
+    public string $subject;
 
-    public function __construct(string $otp)
+    public function __construct(string $otp, string $subject)
     {
         $this->otp = $otp;
+        $this->subject = $subject;
     }
 
     public function via(object $notifiable): array
@@ -27,7 +29,7 @@ class OtpNotification extends Notification
         return (new MailMessage)
             ->subject('Your OTP Code')
             ->greeting('Hello ' . ($notifiable->name ?? 'User') . ',')
-            ->line('Use the following OTP to complete your registration:')
+            ->line('Use the following OTP to complete your ' . $this->subject . ':')
             ->line('**' . $this->otp . '**')
             ->line('This OTP will expire in 10 minutes.')
             ->line('If you did not request this, you can ignore this email.');

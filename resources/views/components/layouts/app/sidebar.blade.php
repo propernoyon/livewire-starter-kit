@@ -28,7 +28,7 @@
         <flux:spacer />
 
         <flux:navlist variant="outline">
-            <flux:navlist.item icon="cog-6-tooth" :href="route('settings.profile')" wire:navigate>{{ __('Settings') }}</flux:navlist.item>
+            <flux:navlist.item icon="cog-6-tooth" :href="route('settings.shop')" wire:navigate>{{ __('Settings') }}</flux:navlist.item>
         </flux:navlist>
 
         <!-- Desktop User Menu -->
@@ -102,7 +102,7 @@
                 <flux:menu.separator />
 
                 <flux:menu.radio.group>
-                    <flux:menu.item :href="route('settings.profile')" icon="cog" wire:navigate>{{ __('Settings') }}</flux:menu.item>
+                    <flux:menu.item :href="route('settings.shop')" icon="cog" wire:navigate>{{ __('Settings') }}</flux:menu.item>
                 </flux:menu.radio.group>
 
                 <flux:menu.separator />

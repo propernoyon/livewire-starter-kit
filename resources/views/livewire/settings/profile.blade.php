@@ -1,10 +1,12 @@
 <?php
 
+
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Validation\Rule;
 use Livewire\Volt\Component;
+use App\Notifications\OtpNotification;
 
 new class extends Component {
     public string $name = '';
@@ -12,71 +14,96 @@ new class extends Component {
     public string $expireDate = '';
     public string $countdown = '';
 
-    /**
-     * Mount the component.
-     */
+    // OTP properties
+    public string $otpInput = '';
+    public string $sentOtp = '';
+    public bool $otpSent = false;
+    public string $pendingEmail = '';
+
     public function mount(): void
     {
         $user = Auth::user();
         $this->name = $user->name;
         $this->email = $user->email;
-
         $this->expireDate = $user->expire_date ? $user->expire_date->format('Y-m-d H:i:s') : '';
         $this->updateCountdown();
     }
 
-    /**
-     * Update the profile information for the currently authenticated user.
-     */
     public function updateProfileInformation(): void
     {
         $user = Auth::user();
 
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
-
-            'email' => [
-                'required',
-                'string',
-                'lowercase',
-                'email',
-                'max:255',
-                Rule::unique(User::class)->ignore($user->id)
-            ],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class)->ignore($user->id)],
         ]);
 
-        $user->fill($validated);
-
-        if ($user->isDirty('email')) {
-            $user->email_verified_at = null;
-        }
-
-        $user->save();
-
-        $this->dispatch('profile-updated', name: $user->name);
-    }
-
-    /**
-     * Send an email verification notification to the current user.
-     */
-    public function resendVerificationNotification(): void
-    {
-        $user = Auth::user();
-
-        if ($user->hasVerifiedEmail()) {
-            $this->redirectIntended(default: route('dashboard', absolute: false));
-
+        // যদি শুধু name change হয়
+        if ($user->email === $validated['email']) {
+            $user->name = $validated['name'];
+            $user->save();
+            $this->dispatch('profile-updated', name: $user->name);
             return;
         }
 
-        $user->sendEmailVerificationNotification();
+        // Email change detected → OTP পাঠানো
+        $plainOtp = rand(100000, 999999);
+        $this->pendingEmail = $validated['email']; // New email address
+        $this->sentOtp = $plainOtp;
+        $this->otpSent = true;
 
-        Session::flash('status', 'verification-link-sent');
+
+        $dummyUser = new User(['email' => $validated['email']]);
+        $dummyUser->name = $validated['name'];
+        $dummyUser->notify(new OtpNotification($plainOtp, 'Email Update'));
+
+        $this->dispatch('otp-sent');
     }
+
+
+    // Step 1: Send OTP to new email
+    public function sendOtp(): void
+    {
+        $validated = $this->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class)->ignore(Auth::id())],
+        ]);
+
+        $plainOtp = rand(100000, 999999); // 6-digit OTP
+        $this->sentOtp = $plainOtp;
+        $this->otpSent = true;
+        $this->pendingEmail = $validated['email'];
+
+        $dummyUser = new User(['email' => $validated['email']]);
+        $dummyUser->name = $validated['name'];
+        $dummyUser->notify(new OtpNotification($plainOtp, 'Email Update'));
+
+        $this->dispatch('otp-sent'); // frontend message
+    }
+
+    // Step 2: Verify OTP and update profile
+    public function verifyOtp(): void
+    {
+        if ($this->otpInput == $this->sentOtp) {
+            $user = Auth::user();
+            $user->name = $this->name;
+            $user->email = $this->pendingEmail;
+            $user->email_verified_at = null;
+            $user->save();
+
+            $this->otpSent = false;
+            $this->otpInput = '';
+            $this->sentOtp = '';
+
+            $this->dispatch('profile-updated', name: $user->name);
+        } else {
+            $this->addError('otpInput', 'OTP is incorrect.');
+        }
+    }
+
     public function updateCountdown(): void
     {
         $user = Auth::user();
-
         if (!$user->expire_date) {
             $this->countdown = 'No expiration set';
             return;
@@ -97,45 +124,46 @@ new class extends Component {
             $this->countdown = 'Expired';
         }
     }
-}; ?>
+};
+
+?>
+
 <section class="w-full">
     @include('partials.settings-heading')
 
     <x-settings.layout :heading="__('Profile')" :subheading="__('Update your name and email address')">
-        <form wire:submit="updateProfileInformation" class="my-6 w-full space-y-6">
-            <flux:input wire:model="name" :label="__('Name')" type="text" required autofocus autocomplete="name" />
-            <flux:input wire:model="email" :label="__('Email')" type="email" required autocomplete="email" />
 
-            @if(auth()->user() instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && !auth()->user()->hasVerifiedEmail())
-            <div class="mt-2">
-                <flux:text>{{ __('Your email address is unverified.') }}
-                    <flux:link class="text-sm cursor-pointer" wire:click.prevent="resendVerificationNotification">
-                        {{ __('Click here to re-send the verification email.') }}
-                    </flux:link>
-                </flux:text>
-
-                @if(session('status') === 'verification-link-sent')
-                <flux:text class="mt-2 font-medium !dark:text-green-400 !text-green-600">
-                    {{ __('A new verification link has been sent to your email address.') }}
-                </flux:text>
+        {{-- Name/email form --}}
+        <form wire:submit.prevent="updateProfileInformation" class="my-6 w-full space-y-6">
+            <flux:input wire:model="name" :label="__('Name')" type="text" required autofocus />
+            <flux:input wire:model="email" :label="__('Email')" type="email" required />
+            <div class="flex items-center justify-end">
+                @if($otpSent)
+                <flux:button variant="primary" value="Save">
+                    {{ __('OTP Sent') }}
+                </flux:button>
+                @else
+                <flux:button variant="primary" type="submit" value="Save">
+                    {{ __('Save') }}
+                </flux:button>
                 @endif
-            </div>
-            @endif
 
-            <div class="flex items-center gap-4">
-                <div class="flex items-center justify-end">
-                    <flux:button variant="primary" type="submit" class="w-full">{{ __('Save') }}</flux:button>
-                </div>
-                <x-action-message class="me-3" on="profile-updated">{{ __('Saved.') }}</x-action-message>
             </div>
         </form>
 
-        <!-- <livewire:settings.delete-user-form /> -->
+        {{-- OTP input --}}
+        @if($otpSent)
+        <form wire:submit.prevent="verifyOtp" class="my-6 w-full space-y-6">
+            <flux:input wire:model="otpInput" :label="__('Enter OTP')" type="text" required />
+            <div class="flex items-center justify-end">
+                <flux:button variant="primary" type="submit">{{ __('Verify OTP & Update') }}</flux:button>
+            </div>
+        </form>
+        @endif
 
         {{-- Expiration Countdown --}}
         <div class="mt-6 p-4 border rounded bg-gray-50 dark:bg-gray-800">
             <h3 class="font-semibold mb-2">Account Expiration</h3>
-
             @if($expireDate)
             <p>Expire Date: <strong>{{ $expireDate }}</strong></p>
             <p>Time Remaining: <strong id="countdown">{{ $countdown }}</strong></p>

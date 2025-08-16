@@ -46,7 +46,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
         // Send OTP using Notification (dummy User instance)
         $dummyUser = new User(['email' => $validated['email']]);
         $dummyUser->name = $validated['name']; 
-        $dummyUser->notify(new OtpNotification($plainOtp));
+        $dummyUser->notify(new OtpNotification($plainOtp, 'Registration'));
 
         // Move to OTP step
         $this->step = 2;
@@ -137,7 +137,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
         // Send OTP using Notification (dummy User instance)
         $dummyUser = new User(['email' => $pending['email']]);
         $dummyUser->name = $pending['name'];
-        $dummyUser->notify(new OtpNotification($plainOtp));
+        $dummyUser->notify(new OtpNotification($plainOtp, 'Registration'));
 
         session()->flash('status', 'A new OTP has been sent to your email.');
     }
